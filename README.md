@@ -60,6 +60,22 @@ In Stripe Dashboard → Developers → Webhooks → Add endpoint:
 - Events: `checkout.session.completed`, `customer.subscription.deleted`
 - Copy the signing secret to `STRIPE_WEBHOOK_SECRET`.
 
+## Deployment (Render)
+
+**Important:** Deploy as a **Web Service**, not a Static Site.
+
+1. Push your code to GitHub
+2. In Render Dashboard → New → Web Service
+3. Connect your repository
+4. Configure:
+   - **Build Command:** `npm install && npm run build`
+   - **Start Command:** `npm start`
+   - **Environment:** `Node`
+5. Add all environment variables from `.env.local` in Render's Environment section
+6. After deployment, update Stripe webhook URL to: `https://your-app.onrender.com/api/stripe-webhook`
+
+The `render.yaml` file is included for automatic configuration if using Render's Blueprint feature.
+
 ## Flow
 
 - Freemium: calls `/api/freemium` → ensure Moodle user → enrol courses from `CAT_FREEMIUM_ID`.
@@ -70,4 +86,5 @@ In Stripe Dashboard → Developers → Webhooks → Add endpoint:
 # stripe_moodle_integration_demo
 
 # stripe_moodle_integration_demo
+
 # stripe_moodle_integration_demo
