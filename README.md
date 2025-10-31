@@ -42,6 +42,28 @@ npm install
 npm run dev
 ```
 
+## Testing with Stripe
+
+Use these test card numbers in Stripe Checkout:
+
+### Successful Payments
+
+- **Card:** `4242 4242 4242 4242`
+- **Expiry:** Any future date (e.g., `12/25`)
+- **CVC:** Any 3 digits (e.g., `123`)
+- **ZIP:** Any 5 digits (e.g., `12345`)
+
+### Declined Cards (for testing failures)
+
+- **Card:** `4000 0000 0000 0002` (generic decline)
+- **Card:** `4000 0000 0000 9995` (insufficient funds)
+
+### Test Email
+
+Use any email address (e.g., `test@example.com`) - Stripe will accept it in test mode.
+
+**Note:** All test cards work with any name, address, and future expiry date when using Stripe test keys.
+
 ## Stripe Webhook
 
 **⚠️ Webhooks don't work directly on localhost** - Stripe needs a publicly accessible URL.
