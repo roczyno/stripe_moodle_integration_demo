@@ -10,15 +10,33 @@ export const config = { api: { bodyParser: false } };
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).end();
+  logger.info('Webhook endpoint hit', { method: req.method, hasSignature: !!req.headers['stripe-signature'] });
+  
+  if (req.method !== 'POST') {
+    logger.warn('Webhook called with wrong method', { method: req.method });
+    return res.status(405).end();
+  }
+  
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    logger.error('STRIPE_WEBHOOK_SECRET missing in environment');
+    return res.status(500).json({ error: 'Webhook secret not configured' });
+  }
+  
   let event;
   try {
     const sig = req.headers['stripe-signature'];
+    if (!sig) {
+      logger.error('Missing stripe-signature header');
+      return res.status(400).json({ error: 'Missing stripe-signature header' });
+    }
+    
     const buf = await buffer(req);
+    logger.info('Attempting to verify webhook signature', { bodyLength: buf.length });
+    
     event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    logger.info('Stripe webhook received', { type: event.type, id: event.id });
+    logger.info('Stripe webhook received and verified', { type: event.type, id: event.id });
   } catch (err) {
-    logger.error('Stripe webhook signature error', { message: err.message });
+    logger.error('Stripe webhook signature error', { message: err.message, stack: err.stack });
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
@@ -57,10 +75,20 @@ export default async function handler(req, res) {
       }
 
       const catIds = PLAN_CATS[plan] || [];
-      const courseIds = await getCoursesByCats(catIds);
-      if (courseIds.length) {
-        await enrolUser(userid, courseIds);
-        logger.info('Webhook enrolment completed', { userid, courseIds });
+      logger.info('Resolving courses for plan', { plan, catIds });
+      
+      if (!catIds || catIds.length === 0) {
+        logger.warn('No category IDs found for plan', { plan, availablePlans: Object.keys(PLAN_CATS) });
+      } else {
+        const courseIds = await getCoursesByCats(catIds);
+        logger.info('Courses resolved from categories', { catIds, courseCount: courseIds.length, courseIds });
+        
+        if (courseIds.length) {
+          await enrolUser(userid, courseIds);
+          logger.info('Webhook enrolment completed', { userid, courseIds });
+        } else {
+          logger.warn('No courses found in categories', { catIds });
+        }
       }
 
       if (session.customer) {

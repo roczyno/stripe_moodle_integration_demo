@@ -82,9 +82,39 @@ Use Stripe CLI to forward webhooks to your local server:
 
 In Stripe Dashboard → Developers → Webhooks → Add endpoint:
 
-- URL: `https://yourapp.vercel.app/api/stripe-webhook`
+- URL: `https://your-app.onrender.com/api/stripe-webhook`
 - Events: `checkout.session.completed`, `customer.subscription.deleted`
-- Copy the signing secret to `STRIPE_WEBHOOK_SECRET`.
+- Copy the signing secret to `STRIPE_WEBHOOK_SECRET` in your Render environment variables
+
+### Troubleshooting Webhooks
+
+**If you see checkout logs but no webhook logs:**
+
+1. **Check webhook is configured in Stripe:**
+
+   - Go to Stripe Dashboard → Developers → Webhooks
+   - Verify the endpoint URL matches your deployed app URL
+   - Check that `checkout.session.completed` event is enabled
+
+2. **Verify webhook secret:**
+
+   - In Stripe Dashboard → Webhooks → click your endpoint → "Signing secret"
+   - Ensure this matches `STRIPE_WEBHOOK_SECRET` in your Render environment
+
+3. **Check webhook delivery logs:**
+
+   - In Stripe Dashboard → Webhooks → click your endpoint → "Recent events"
+   - Look for failed attempts (red) and click to see error details
+
+4. **Test endpoint accessibility:**
+
+   - Visit: `https://your-app.onrender.com/api/webhook-test`
+   - Should return JSON with status and configuration
+
+5. **Trigger a test webhook:**
+   - In Stripe Dashboard → Webhooks → click your endpoint → "Send test webhook"
+   - Select `checkout.session.completed` event
+   - Check your Render logs for the webhook receipt
 
 ## Deployment (Render)
 
