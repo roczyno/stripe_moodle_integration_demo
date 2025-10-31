@@ -1,0 +1,117 @@
+:root {
+  --bg: #0b0f17;
+  --card: #121826;
+  --muted: #9aa4b2;
+  --text: #e5e7eb;
+  --brand: #6d5efc;
+  --brand-2: #8b5cf6;
+  --success: #10b981;
+}
+
+html, body, #__next {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: radial-gradient(1200px 600px at 80% -10%, rgba(109,94,252,0.2), transparent),
+              radial-gradient(1000px 600px at -10% 10%, rgba(139,92,246,0.16), transparent),
+              var(--bg);
+  color: var(--text);
+}
+
+.container {
+  max-width: 980px;
+  margin: 48px auto;
+  padding: 0 20px;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.hero h1 {
+  font-size: 40px;
+  line-height: 1.1;
+  margin: 0 0 12px 0;
+}
+
+.hero p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (min-width: 700px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 22px;
+  backdrop-filter: blur(6px);
+}
+
+.card h3 {
+  margin: 0 0 6px 0;
+  font-size: 20px;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 6px 0 12px;
+}
+
+.price .amount { font-size: 28px; font-weight: 700; }
+.price .per { color: var(--muted); }
+
+.muted {
+  color: var(--muted);
+}
+
+.btn {
+  appearance: none;
+  border: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  color: white;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  box-shadow: 0 6px 18px rgba(109,94,252,0.35);
+  transition: transform 0.08s ease, filter 0.15s ease, opacity 0.2s ease;
+}
+
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn:hover:not(:disabled) { filter: brightness(1.05); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+
+.plan-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(16,185,129,0.15);
+  color: var(--success);
+  border: 1px solid rgba(16,185,129,0.25);
+}
+
+
