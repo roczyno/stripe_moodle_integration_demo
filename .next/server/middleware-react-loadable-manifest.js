@@ -1,0 +1,1 @@
+self.__REACT_LOADABLE_MANIFEST="{\"pages\\\\index.js -> ../components/Plans\":{\"id\":\"pages\\\\index.js -> ../components/Plans\",\"files\":[\"static/chunks/components_Plans_js.js\"]}}"
