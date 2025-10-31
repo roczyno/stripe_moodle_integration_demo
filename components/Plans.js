@@ -34,18 +34,18 @@ export default function Plans() {
           <div className="price"><span className="amount">$19</span><span className="per">/month</span></div>
           <p className="muted">For individuals getting started with premium content.</p>
           <div className="plan-actions">
-            <button className="btn" disabled={loading} onClick={() => handlePaid('starter_monthly')}>Choose Starter Monthly</button>
-            <button className="btn" disabled={loading} onClick={() => handlePaid('starter_yearly')}>Choose Starter Yearly</button>
+            <button className="btn" disabled={loading} onClick={() => handlePaid('starter_monthly')}>Starter Monthly - $19/month</button>
+            <button className="btn" disabled={loading} onClick={() => handlePaid('starter_yearly')}>Starter Yearly - $190/year <span style={{fontSize: '0.9em', opacity: 0.9}}>(~17% discount)</span></button>
           </div>
         </div>
 
         <div className="card">
           <h3>Pro</h3>
-          <div className="price"><span className="amount">$39</span><span className="per">/month</span></div>
+          <div className="price"><span className="amount">$49</span><span className="per">/month</span></div>
           <p className="muted">For power users who need full course access.</p>
           <div className="plan-actions">
-            <button className="btn" disabled={loading} onClick={() => handlePaid('pro_monthly')}>Choose Pro Monthly</button>
-            <button className="btn" disabled={loading} onClick={() => handlePaid('pro_yearly')}>Choose Pro Yearly</button>
+            <button className="btn" disabled={loading} onClick={() => handlePaid('pro_monthly')}>Pro Monthly - $49/month</button>
+            <button className="btn" disabled={loading} onClick={() => handlePaid('pro_yearly')}>Pro Yearly - $490/year</button>
           </div>
         </div>
       </div>
