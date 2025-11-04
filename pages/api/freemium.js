@@ -1,5 +1,6 @@
 import { getUserByEmail, createUser, getCoursesByCats, enrolUser } from '../../lib/moodle';
 import { logger } from '../../lib/logger';
+import { generateCompliantPassword } from '../../lib/password';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -15,7 +16,7 @@ export default async function handler(req, res) {
     logger.info('Moodle user lookup completed', { email, found: users?.length || 0 });
     let userid;
     if (!users || users.length === 0) {
-      const password = Math.random().toString(36).slice(-12);
+      const password = generateCompliantPassword(16);
       const created = await createUser({ email, firstname, lastname, password });
       userid = Array.isArray(created) ? created[0]?.id : created?.[0]?.id;
       logger.info('Moodle user created', { email, userid });

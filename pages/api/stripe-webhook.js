@@ -9,6 +9,7 @@ import {
   unenrolUser,
 } from "../../lib/moodle";
 import { logger } from "../../lib/logger";
+import { generateCompliantPassword } from "../../lib/password";
 
 export const config = { api: { bodyParser: false } };
 
@@ -72,15 +73,35 @@ export default async function handler(req, res) {
       let users = await getUserByEmail(email);
       let userid;
       if (!users || users.length === 0) {
-        const password = Math.random().toString(36).slice(-12);
+        const password = generateCompliantPassword(16);
         const created = await createUser({
           email,
           firstname,
           lastname,
           password,
         });
-        userid = Array.isArray(created) ? created[0]?.id : created?.[0]?.id;
-        logger.info("Moodle user created via webhook", { email, userid });
+        const createdRaw = Array.isArray(created) ? created : [created];
+        userid = createdRaw?.[0]?.id;
+        logger.info("Moodle create user response", { email, created });
+
+        // Verify user exists after create
+        if (!userid) {
+          const verify = await getUserByEmail(email);
+          if (Array.isArray(verify) && verify[0]?.id) {
+            userid = verify[0].id;
+            logger.info("Moodle user verified after create", { email, userid });
+          } else {
+            logger.error(
+              "Moodle user creation did not return an id and verify failed",
+              { email, created }
+            );
+            return res
+              .status(500)
+              .json({ error: "Failed to create Moodle user" });
+          }
+        } else {
+          logger.info("Moodle user created via webhook", { email, userid });
+        }
         // Email notifications are handled by Moodle configuration.
       } else {
         userid = users[0].id;
