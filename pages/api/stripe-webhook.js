@@ -114,25 +114,32 @@ export default async function handler(req, res) {
       const catIds = PLAN_CATS[plan] || [];
       logger.info("Resolving courses for plan", { plan, catIds });
 
-      if (!catIds || catIds.length === 0) {
-        logger.warn("No category IDs found for plan", {
-          plan,
-          availablePlans: Object.keys(PLAN_CATS),
-        });
-      } else {
-        const courseIds = await getCoursesByCats(catIds);
-        logger.info("Courses resolved from categories", {
-          catIds,
-          courseCount: courseIds.length,
-          courseIds,
-        });
-
-        if (courseIds.length) {
-          await enrolUser(userid, courseIds);
-          logger.info("Webhook enrolment completed", { userid, courseIds });
+      try {
+        if (!catIds || catIds.length === 0) {
+          logger.warn("No category IDs found for plan", {
+            plan,
+            availablePlans: Object.keys(PLAN_CATS),
+          });
         } else {
-          logger.warn("No courses found in categories", { catIds });
+          const courseIds = await getCoursesByCats(catIds);
+          logger.info("Courses resolved from categories", {
+            catIds,
+            courseCount: courseIds.length,
+            courseIds,
+          });
+
+          if (courseIds.length) {
+            await enrolUser(userid, courseIds);
+            logger.info("Webhook enrolment completed", { userid, courseIds });
+          } else {
+            logger.warn("No courses found in categories", { catIds });
+          }
         }
+      } catch (courseErr) {
+        logger.error("Course resolution or enrolment failed", {
+          message: courseErr.message,
+        });
+        // Do not fail the webhook; user creation succeeded
       }
 
       if (session.customer) {
