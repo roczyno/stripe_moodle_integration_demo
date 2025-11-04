@@ -26,6 +26,7 @@ STRIPE_PRICE_PRO_YEARLY=price_...
 MOODLE_URL=https://your-moodle.com
 MOODLE_TOKEN=abc123...
 STUDENT_ROLE_ID=5
+MOODLE_AUTH_METHOD=email # 'email' to let Moodle email confirmation; 'manual' to set password
 
 CAT_FREEMIUM_ID=10
 CAT_STARTER_ID=11

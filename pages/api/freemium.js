@@ -16,10 +16,11 @@ export default async function handler(req, res) {
     logger.info('Moodle user lookup completed', { email, found: users?.length || 0 });
     let userid;
     if (!users || users.length === 0) {
-      const password = generateCompliantPassword(16);
+      const authMethod = (process.env.MOODLE_AUTH_METHOD || 'manual').toLowerCase();
+      const password = authMethod === 'email' ? undefined : generateCompliantPassword(16);
       const created = await createUser({ email, firstname, lastname, password });
       userid = Array.isArray(created) ? created[0]?.id : created?.[0]?.id;
-      logger.info('Moodle user created', { email, userid });
+      logger.info('Moodle user created', { email, userid, authMethod });
       // Email notifications are handled by Moodle configuration.
     } else {
       userid = users[0].id;

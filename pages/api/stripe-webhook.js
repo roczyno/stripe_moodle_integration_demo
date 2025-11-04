@@ -73,7 +73,11 @@ export default async function handler(req, res) {
       let users = await getUserByEmail(email);
       let userid;
       if (!users || users.length === 0) {
-        const password = generateCompliantPassword(16);
+        const authMethod = (
+          process.env.MOODLE_AUTH_METHOD || "manual"
+        ).toLowerCase();
+        const password =
+          authMethod === "email" ? undefined : generateCompliantPassword(16);
         const created = await createUser({
           email,
           firstname,
@@ -82,7 +86,11 @@ export default async function handler(req, res) {
         });
         const createdRaw = Array.isArray(created) ? created : [created];
         userid = createdRaw?.[0]?.id;
-        logger.info("Moodle create user response", { email, created });
+        logger.info("Moodle create user response", {
+          email,
+          authMethod,
+          created,
+        });
 
         // Verify user exists after create
         if (!userid) {
@@ -100,7 +108,11 @@ export default async function handler(req, res) {
               .json({ error: "Failed to create Moodle user" });
           }
         } else {
-          logger.info("Moodle user created via webhook", { email, userid });
+          logger.info("Moodle user created via webhook", {
+            email,
+            userid,
+            authMethod,
+          });
         }
         // Email notifications are handled by Moodle configuration.
       } else {
