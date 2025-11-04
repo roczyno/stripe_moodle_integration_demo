@@ -31,8 +31,7 @@ CAT_FREEMIUM_ID=10
 CAT_STARTER_ID=11
 CAT_PRO_ID=12
 
-RESEND_API_KEY=
-FROM_EMAIL=notifications@example.com
+# Email delivery is handled by Moodle; no email provider is required in this app
 ```
 
 ## Run

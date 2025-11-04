@@ -8,14 +8,9 @@ import {
   enrolUser,
   unenrolUser,
 } from "../../lib/moodle";
-import { Resend } from "resend";
 import { logger } from "../../lib/logger";
 
 export const config = { api: { bodyParser: false } };
-
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null;
 
 export default async function handler(req, res) {
   logger.info("Webhook endpoint hit", {
@@ -86,18 +81,7 @@ export default async function handler(req, res) {
         });
         userid = Array.isArray(created) ? created[0]?.id : created?.[0]?.id;
         logger.info("Moodle user created via webhook", { email, userid });
-
-        if (resend && process.env.FROM_EMAIL) {
-          try {
-            await resend.emails.send({
-              from: process.env.FROM_EMAIL,
-              to: email,
-              subject: "Welcome! Your Moodle Login",
-              html: `<p>Username: ${email}<br>Password: ${password}<br>Login: ${process.env.MOODLE_URL}</p>`,
-            });
-            logger.info("Welcome email sent via webhook", { to: email });
-          } catch {}
-        }
+        // Email notifications are handled by Moodle configuration.
       } else {
         userid = users[0].id;
         logger.info("Existing Moodle user resolved via webhook", {
