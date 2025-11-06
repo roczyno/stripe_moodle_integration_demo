@@ -80,10 +80,23 @@ export default async function handler(req, res) {
       logger.warn('No Moodle user found to save customer ID', { email });
     }
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customer.id,
-      return_url: returnUrl || process.env.NEXT_PUBLIC_MOODLE_URL || `${req.headers.origin}/`
-    });
+    // Create portal session (this should work even if user wasn't found)
+    let session;
+    try {
+      session = await stripe.billingPortal.sessions.create({
+        customer: customer.id,
+        return_url: returnUrl || process.env.NEXT_PUBLIC_MOODLE_URL || `${req.headers.origin}/`
+      });
+      logger.info('Portal session created successfully', { customerId: customer.id, sessionUrl: session.url });
+    } catch (portalErr) {
+      logger.error('Failed to create portal session', { 
+        customerId: customer.id, 
+        email,
+        error: portalErr.message,
+        stack: portalErr.stack
+      });
+      throw portalErr; // Re-throw to be caught by outer catch
+    }
 
     res.status(200).json({ url: session.url });
   } catch (err) {
