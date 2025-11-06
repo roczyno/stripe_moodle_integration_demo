@@ -1,6 +1,7 @@
 import { buffer } from "micro";
 import { stripe } from "../../lib/stripe";
 import { PLAN_CATS } from "../../lib/stripe";
+import { PRICE_IDS } from "../../lib/stripe";
 import {
   getUserByEmail,
   createUser,
@@ -62,13 +63,39 @@ export default async function handler(req, res) {
   try {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      const plan = session.metadata?.plan;
+      let plan = session.metadata?.plan;
       const email = session.metadata?.email || session.customer_details?.email;
       const name =
         session.metadata?.name || session.customer_details?.name || "";
       const firstname = name.split(" ")[0] || "";
       const lastname = name.split(" ").slice(1).join(" ") || "";
       logger.info("Checkout completed", { plan, email, sessionId: session.id });
+
+      // If plan not provided via metadata (Payment Links), derive from price ID
+      if (!plan) {
+        try {
+          const fullSession = await stripe.checkout.sessions.retrieve(session.id, {
+            expand: ["line_items.data.price"],
+          });
+          const priceId = fullSession?.line_items?.data?.[0]?.price?.id;
+          if (priceId) {
+            for (const [planName, id] of Object.entries(PRICE_IDS)) {
+              if (id === priceId) {
+                plan = planName;
+                logger.info("Mapped price ID to plan (Payment Link)", { priceId, plan });
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          logger.error("Failed to expand session for plan mapping", { message: e.message });
+        }
+      }
+
+      if (!plan) {
+        logger.error("Could not determine plan from session", { sessionId: session.id });
+        return res.status(400).json({ error: "Could not determine plan" });
+      }
 
       let users = await getUserByEmail(email);
       let userid;
