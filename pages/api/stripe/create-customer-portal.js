@@ -1,6 +1,6 @@
 import { stripe } from '../../../lib/stripe';
 import { logger } from '../../../lib/logger';
-import { getUserByEmail } from '../../../lib/moodle';
+import { getUserByEmail, updateUserCustomFields } from '../../../lib/moodle';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -20,19 +20,32 @@ export default async function handler(req, res) {
       }
     } catch {}
 
+    // Get Moodle user to save customer ID
+    let moodleUser;
+    try {
+      const users = await getUserByEmail(email);
+      moodleUser = Array.isArray(users) && users[0] ? users[0] : undefined;
+    } catch {}
+
     if (!customer) {
       // Create customer and link Moodle user id if available
-      let moodleUserId;
-      try {
-        const users = await getUserByEmail(email);
-        moodleUserId = Array.isArray(users) && users[0]?.id ? users[0].id : undefined;
-      } catch {}
-
+      const moodleUserId = moodleUser?.id;
       customer = await stripe.customers.create({
         email,
         metadata: moodleUserId ? { moodle_userid: String(moodleUserId) } : undefined,
       });
       logger.info('Created Stripe customer for portal', { email, customer: customer.id, moodleUserId });
+    }
+
+    // Save stripe_customer_id to Moodle user custom field (if user exists)
+    if (moodleUser?.id) {
+      try {
+        const shortname = process.env.MOODLE_STRIPE_PROFILE_FIELD || 'stripe_customer_id';
+        await updateUserCustomFields(moodleUser.id, { [shortname]: String(customer.id) });
+        logger.info('Saved stripe_customer_id on Moodle user (portal)', { userid: moodleUser.id, shortname });
+      } catch (saveErr) {
+        logger.warn('Unable to save stripe_customer_id on Moodle user (portal)', { message: saveErr.message });
+      }
     }
 
     const session = await stripe.billingPortal.sessions.create({
