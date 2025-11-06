@@ -8,6 +8,7 @@ import {
   getCoursesByCats,
   enrolUser,
   unenrolUser,
+  updateUserCustomFields,
 } from "../../lib/moodle";
 import { logger } from "../../lib/logger";
 import { generateCompliantPassword } from "../../lib/password";
@@ -202,6 +203,15 @@ export default async function handler(req, res) {
           customer: session.customer,
           userid,
         });
+
+        // Persist Stripe customer id on Moodle user custom field (optional but recommended)
+        try {
+          const shortname = process.env.MOODLE_STRIPE_PROFILE_FIELD || 'stripe_customer_id';
+          await updateUserCustomFields(userid, { [shortname]: String(session.customer) });
+          logger.info('Saved stripe_customer_id on Moodle user', { userid, shortname });
+        } catch (saveErr) {
+          logger.warn('Unable to save stripe_customer_id on Moodle user', { message: saveErr.message });
+        }
       }
     }
 
