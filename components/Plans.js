@@ -17,6 +17,7 @@ const LINKS = {
 
 export default function Plans() {
   const [loading, setLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const handlePaid = (plan) => {
     setLoading(true);
@@ -29,11 +30,53 @@ export default function Plans() {
     window.location.href = url;
   };
 
+  const handleManageSubscription = async () => {
+    // Get customer ID from URL params or localStorage (you'd set this after checkout)
+    const urlParams = new URLSearchParams(window.location.search);
+    const customerId =
+      urlParams.get("customer_id") ||
+      localStorage.getItem("stripe_customer_id");
+
+    if (!customerId) {
+      alert("No subscription found. Please purchase a plan first.");
+      return;
+    }
+
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/create-portal-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId }),
+      });
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.error || "Failed to create portal session");
+      window.location.href = data.url;
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
   return (
     <div className="container">
       <div className="hero">
         <h1>Pick your plan</h1>
         <p>Email and details will be collected securely on Stripe Checkout.</p>
+        <button
+          className="btn"
+          disabled={portalLoading}
+          onClick={handleManageSubscription}
+          style={{
+            marginTop: "16px",
+            background: "rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255,255,255,0.2)",
+          }}
+        >
+          {portalLoading ? "Loading..." : "Manage Subscription"}
+        </button>
       </div>
       <div className="grid">
         <div className="card">
