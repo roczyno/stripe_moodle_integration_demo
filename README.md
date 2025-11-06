@@ -142,11 +142,3 @@ The `render.yaml` file is included for automatic configuration if using Render's
 
 - Freemium: calls `/api/freemium` → ensure Moodle user → enrol courses from `CAT_FREEMIUM_ID`.
 - Paid: `/api/create-checkout` sends to Stripe Checkout. Webhook `/api/stripe-webhook` ensures user, enrols based on `PLAN_CATS`, and links customer to `moodle_userid`.
-
-# Stripe_payment_demo
-
-# stripe_moodle_integration_demo
-
-# stripe_moodle_integration_demo
-
-# stripe_moodle_integration_demo
