@@ -105,41 +105,54 @@ export default async function handler(req, res) {
         ).toLowerCase();
         const password =
           authMethod === "email" ? undefined : generateCompliantPassword(16);
-        const created = await createUser({
-          email,
-          firstname,
-          lastname,
-          password,
-        });
-        const createdRaw = Array.isArray(created) ? created : [created];
-        userid = createdRaw?.[0]?.id;
-        logger.info("Moodle create user response", {
-          email,
-          authMethod,
-          created,
-        });
+        try {
+          const created = await createUser({
+            email,
+            firstname,
+            lastname,
+            password,
+          });
+          const createdRaw = Array.isArray(created) ? created : [created];
+          userid = createdRaw?.[0]?.id;
+          logger.info("Moodle create user response", {
+            email,
+            authMethod,
+            created,
+          });
 
-        // Verify user exists after create
-        if (!userid) {
+          // Verify user exists after create
+          if (!userid) {
+            const verify = await getUserByEmail(email);
+            if (Array.isArray(verify) && verify[0]?.id) {
+              userid = verify[0].id;
+              logger.info("Moodle user verified after create", { email, userid });
+            } else {
+              logger.error(
+                "Moodle user creation did not return an id and verify failed",
+                { email, created }
+              );
+              return res
+                .status(500)
+                .json({ error: "Failed to create Moodle user" });
+            }
+          } else {
+            logger.info("Moodle user created via webhook", {
+              email,
+              userid,
+              authMethod,
+            });
+          }
+        } catch (createErr) {
+          // Handle duplicate/invalidparameter by attempting to resolve existing user
+          logger.warn("Create user failed; attempting lookup", { message: createErr.message });
           const verify = await getUserByEmail(email);
           if (Array.isArray(verify) && verify[0]?.id) {
             userid = verify[0].id;
-            logger.info("Moodle user verified after create", { email, userid });
+            logger.info("Existing Moodle user resolved after failed create", { email, userid });
           } else {
-            logger.error(
-              "Moodle user creation did not return an id and verify failed",
-              { email, created }
-            );
-            return res
-              .status(500)
-              .json({ error: "Failed to create Moodle user" });
+            logger.error("Unable to ensure Moodle user after failed create", { email });
+            return res.status(500).json({ error: "Failed to ensure Moodle user" });
           }
-        } else {
-          logger.info("Moodle user created via webhook", {
-            email,
-            userid,
-            authMethod,
-          });
         }
         // Email notifications are handled by Moodle configuration.
       } else {
@@ -190,6 +203,73 @@ export default async function handler(req, res) {
           userid,
         });
       }
+    }
+
+    if (event.type === "customer.subscription.updated") {
+      const sub = event.data.object;
+      // Determine new plan from subscription items (first price)
+      const priceId = sub?.items?.data?.[0]?.price?.id;
+      let plan;
+      if (priceId) {
+        for (const [planName, id] of Object.entries(PRICE_IDS)) {
+          if (id === priceId) {
+            plan = planName;
+            break;
+          }
+        }
+      }
+
+      const customer = await stripe.customers.retrieve(sub.customer);
+      const useridStr = customer?.metadata?.moodle_userid;
+      const userid = useridStr ? parseInt(useridStr) : undefined;
+      logger.info("Subscription updated", { customer: sub.customer, plan, userid });
+
+      if (!userid) {
+        return res.json({ received: true });
+      }
+
+      // Desired paid categories for the new plan (exclude freemium)
+      const desiredCats = (PLAN_CATS[plan] || []).filter(
+        (c) => c !== parseInt(process.env.CAT_FREEMIUM_ID)
+      );
+      const allPaidCats = Array.from(
+        new Set([
+          parseInt(process.env.CAT_STARTER_ID),
+          parseInt(process.env.CAT_PRO_ID),
+        ])
+      );
+      const unenrolCats = allPaidCats.filter((c) => !desiredCats.includes(c));
+
+      try {
+        // Enrol into desired paid cats (idempotent)
+        if (desiredCats.length) {
+          const desiredCourses = await getCoursesByCats(desiredCats);
+          if (desiredCourses.length) {
+            await enrolUser(userid, desiredCourses);
+            logger.info("Ensured enrolments for updated plan", {
+              userid,
+              desiredCats,
+              desiredCourses,
+            });
+          }
+        }
+        // Unenrol from categories no longer included
+        if (unenrolCats.length) {
+          const removeCourses = await getCoursesByCats(unenrolCats);
+          if (removeCourses.length) {
+            await unenrolUser(userid, removeCourses);
+            logger.info("Removed enrolments not in updated plan", {
+              userid,
+              unenrolCats,
+              removeCourses,
+            });
+          }
+        }
+      } catch (syncErr) {
+        logger.error("Plan change sync failed", { message: syncErr.message });
+      }
+
+      return res.json({ received: true });
     }
 
     if (event.type === "customer.subscription.deleted") {
