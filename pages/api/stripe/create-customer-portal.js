@@ -83,19 +83,33 @@ export default async function handler(req, res) {
     // Create portal session (this should work even if user wasn't found)
     let session;
     try {
-      session = await stripe.billingPortal.sessions.create({
+      const portalConfig = {
         customer: customer.id,
         return_url: returnUrl || process.env.NEXT_PUBLIC_MOODLE_URL || `${req.headers.origin}/`
-      });
+      };
+      logger.info('Creating portal session with config', { customerId: customer.id, returnUrl: portalConfig.return_url });
+      
+      session = await stripe.billingPortal.sessions.create(portalConfig);
       logger.info('Portal session created successfully', { customerId: customer.id, sessionUrl: session.url });
     } catch (portalErr) {
       logger.error('Failed to create portal session', { 
         customerId: customer.id, 
         email,
         error: portalErr.message,
+        errorType: portalErr.type,
+        errorCode: portalErr.code,
         stack: portalErr.stack
       });
-      throw portalErr; // Re-throw to be caught by outer catch
+      
+      // Provide more helpful error message
+      let errorMessage = portalErr.message;
+      if (portalErr.type === 'StripeInvalidRequestError') {
+        if (portalErr.message.includes('portal')) {
+          errorMessage = 'Stripe Customer Portal is not configured. Please enable it in Stripe Dashboard → Settings → Billing → Customer Portal.';
+        }
+      }
+      
+      return res.status(500).json({ error: errorMessage });
     }
 
     res.status(200).json({ url: session.url });
