@@ -21,25 +21,39 @@ export default async function handler(req, res) {
     } catch {}
 
     if (!customer) {
-      // Create customer and link Moodle user id if available
-      let moodleUserId;
-      try {
-        const users = await getUserByEmail(email);
-        moodleUserId = Array.isArray(users) && users[0]?.id ? users[0].id : undefined;
-      } catch {}
-
-      customer = await stripe.customers.create({
-        email,
-        metadata: moodleUserId ? { moodle_userid: String(moodleUserId) } : undefined,
+      // No customer found - user has never purchased, redirect to plans
+      logger.info('No Stripe customer found for email', { email });
+      const plansUrl = process.env.NEXT_PUBLIC_PLANS_URL || `${req.headers.origin}/`;
+      return res.status(200).json({ 
+        redirectToPlans: true, 
+        plansUrl 
       });
-      logger.info('Created Stripe customer for portal', { email, customer: customer.id, moodleUserId });
     }
 
+    // Check if customer has any active subscriptions
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customer.id,
+      status: 'active',
+      limit: 1
+    });
+
+    if (!subscriptions.data || subscriptions.data.length === 0) {
+      // No active subscription - redirect to plans page
+      logger.info('Customer has no active subscription', { email, customer: customer.id });
+      const plansUrl = process.env.NEXT_PUBLIC_PLANS_URL || `${req.headers.origin}/`;
+      return res.status(200).json({ 
+        redirectToPlans: true, 
+        plansUrl 
+      });
+    }
+
+    // Customer has active subscription - create portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: customer.id,
       return_url: returnUrl || process.env.NEXT_PUBLIC_MOODLE_URL || `${req.headers.origin}/`
     });
 
+    logger.info('Customer portal session created', { email, customer: customer.id });
     res.status(200).json({ url: session.url });
   } catch (err) {
     logger.error('Create customer portal error', { message: err.message, stack: err.stack });
