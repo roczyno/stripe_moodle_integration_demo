@@ -1,6 +1,9 @@
 import { useState } from "react";
 
 const LINKS = {
+  freemium:
+    process.env.NEXT_PUBLIC_FREEMIUM_URL ||
+    'https://learn.cylynk.com/login/index.php',
   starter_monthly:
     process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_STARTER_MONTHLY ||
     "https://buy.stripe.com/test_14A6oA5xi5lVbjE8VzfAc03",
@@ -29,6 +32,11 @@ export default function Plans() {
     window.location.href = url;
   };
 
+  const handleFreemium = () => {
+    const url = LINKS.freemium;
+    window.location.href = url;
+  };
+
   return (
     <div className="container">
       <div className="hero">
@@ -36,6 +44,22 @@ export default function Plans() {
         <p>Email and details will be collected securely on Stripe Checkout.</p>
       </div>
       <div className="grid">
+        <div className="card">
+          <h3>Freemium</h3>
+          <div className="price">
+            <span className="amount">$0</span>
+            <span className="per">/forever</span>
+          </div>
+          <p className="muted">
+            Access free introductory courses. Upgrade anytime for more content.
+          </p>
+          <div className="plan-actions">
+            <button className="btn" disabled={loading} onClick={handleFreemium}>
+              Get Started Free
+            </button>
+          </div>
+        </div>
+
         <div className="card">
           <span className="badge">Popular</span>
           <h3>Starter</h3>

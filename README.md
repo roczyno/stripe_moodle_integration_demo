@@ -28,6 +28,7 @@ NEXT_PUBLIC_STRIPE_PAYMENT_LINK_STARTER_MONTHLY=https://buy.stripe.com/test_14A6
 NEXT_PUBLIC_STRIPE_PAYMENT_LINK_STARTER_YEARLY=https://buy.stripe.com/test_9B65kw7Fq8y7fzU3BffAc02
 NEXT_PUBLIC_STRIPE_PAYMENT_LINK_PRO_MONTHLY=https://buy.stripe.com/test_4gMbIU3pa7u373ogo1fAc01
 NEXT_PUBLIC_STRIPE_PAYMENT_LINK_PRO_YEARLY=https://buy.stripe.com/test_eVq6oA5xiaGf9bw7RvfAc00
+NEXT_PUBLIC_FREEMIUM_URL=https://learn.cylynk.com/login/index.php
 
 MOODLE_URL=https://your-moodle.com
 MOODLE_TOKEN=abc123...
