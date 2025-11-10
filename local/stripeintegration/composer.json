@@ -1,0 +1,9 @@
+{
+  "name": "moodle/local-stripeintegration",
+  "description": "Stripe integration plugin for Moodle",
+  "type": "moodle-local",
+  "require": {
+    "stripe/stripe-php": "^13.0"
+  }
+}
+
